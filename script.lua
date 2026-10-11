@@ -1,6 +1,6 @@
 -- Roblox Kami & Rivals Script (Key System + Simple UI Integrated)
 local input_key = script_key or ""
-print("🔑 Loaded Script with Key: " + input_key)
+print("🔑 Loaded Script with Key: " .. input_key)
 
 -- [1] AC Bypass & Core Function
 local _stbl; _stbl = hookfunction(getrenv().setmetatable, newcclosure(function(tbl, mt)
