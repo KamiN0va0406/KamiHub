@@ -1,6 +1,6 @@
 -- Roblox Kami & Rivals Script (Key System + Simple UI Integrated)
-local input_key = script_key or ""
-print("🔑 Loaded Script with Key: " .. input_key)
+-- (주의: script_key 변수는 디스코드 봇 로더에서 자동으로 주입됩니다)
+local input_key = (type(script_key) == "string" and script_key) or "Unknown"
 
 -- [1] AC Bypass & Core Function
 local _stbl; _stbl = hookfunction(getrenv().setmetatable, newcclosure(function(tbl, mt)
