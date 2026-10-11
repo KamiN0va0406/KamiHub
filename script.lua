@@ -1,5 +1,4 @@
--- Roblox Kami & Rivals Script (Key System + Simple UI Integrated)
--- (주의: script_key 변수는 디스코드 봇 로더에서 자동으로 주입됩니다)
+-- Roblox Kami & Rivals Script (Key System + Full Features + UI)
 local input_key = (type(script_key) == "string" and script_key) or "Unknown"
 
 -- [1] AC Bypass & Core Function
@@ -40,7 +39,14 @@ end)()
 
 task.wait(2)
 
--- [2] Skin Unlocker Setup
+-- 기능 상태 변수 (토글 제어용)
+local Config = {
+    SkinUnlock = false,
+    Aimbot = false,
+    SilentAim = false
+}
+
+-- [2] Skin Unlocker Logic
 local _plrs    = game:GetService("Players")
 local _rs      = game:GetService("ReplicatedStorage")
 local _lp      = _plrs.LocalPlayer
@@ -64,6 +70,7 @@ local function _isCosType(cosObj)
 end
 
 _cosLib.OwnsCosmeticNormally = function(self, inv, nm, wep)
+    if not Config.SkinUnlock then return false end
     local c = _cosLib.Cosmetics[nm]
     if c and c.Type == "Skin" then return true end
     return false
@@ -72,7 +79,7 @@ end
 local _origGet = _datCtrl.Get
 _datCtrl.Get = function(self, key)
     local _val = _origGet(self, key)
-    if key == "CosmeticInventory" then
+    if key == "CosmeticInventory" and Config.SkinUnlock then
         local _prx = {}
         if _val then
             for k, v in pairs(_val) do
@@ -91,11 +98,70 @@ _datCtrl.Get = function(self, key)
     return _val
 end
 
--- [3] Simple Toggle UI (기능 껐다 켜기 미니 패널)
-local CoreGui = game:GetService("CoreGui")
+-- [3] Aimbot & Silent Aim Logic
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local Camera = workspace.CurrentCamera
+local CurrentTarget
 
--- 기존에 켜져있던 UI가 있다면 삭제
+pcall(function()
+    local FighterController = require(_ctrl:WaitForChild("FighterController", 10))
+    local LocalFighter = FighterController.LocalFighter
+    local Old = LocalFighter.GetMouseLocation
+    LocalFighter.GetMouseLocation = newcclosure(function(...)
+        if Config.Aimbot and CurrentTarget then
+            local ScreenPosition = Camera:WorldToScreenPoint(CurrentTarget.Position)
+            return Vector2.new(ScreenPosition.X, ScreenPosition.Y)
+        end
+        return Old(...)
+    end)
+end)
+
+RunService.RenderStepped:Connect(function()
+    if not Config.Aimbot and not Config.SilentAim then
+        CurrentTarget = nil
+        return
+    end
+
+    local PlayerCharacter = _lp.Character
+    if not PlayerCharacter then
+        CurrentTarget = nil
+        return
+    end
+
+    local CameraPosition = Camera.CFrame.Position
+    local CameraLookVector = Camera.CFrame.LookVector
+    CurrentTarget = nil
+    local ClosestDistance = math.huge
+
+    for _, OtherPlayer in ipairs(_plrs:GetPlayers()) do
+        if OtherPlayer == _lp then continue end
+        local TargetCharacter = OtherPlayer.Character
+        if not TargetCharacter then continue end
+        local TargetHumanoid = TargetCharacter:FindFirstChildOfClass("Humanoid")
+        if not TargetHumanoid or TargetHumanoid.Health <= 0 then continue end
+        if TargetCharacter:FindFirstChildOfClass("ForceField") then continue end
+        local TargetHead = TargetCharacter:FindFirstChild("Head")
+        if not TargetHead then continue end
+
+        local HeadPosition = TargetHead.Position
+        local ScreenPosition, IsOnScreen = Camera:WorldToViewportPoint(HeadPosition)
+        if IsOnScreen then
+            local ScreenVector = Vector2.new(ScreenPosition.X, ScreenPosition.Y)
+            local DistanceFromCenter = (ScreenVector - UserInputService:GetMouseLocation()).Magnitude
+            if DistanceFromCenter <= 300 and DistanceFromCenter < ClosestDistance then
+                local DirectionToTarget = (HeadPosition - CameraPosition).Unit
+                if CameraLookVector:Dot(DirectionToTarget) > 0 then
+                    ClosestDistance = DistanceFromCenter
+                    CurrentTarget = TargetHead
+                end
+            end
+        end
+    end
+end)
+
+-- [4] Simple Toggle UI (미니 패널)
+local CoreGui = game:GetService("CoreGui")
 if CoreGui:FindFirstChild("KamiSimpleUI") then
     CoreGui.KamiSimpleUI:Destroy()
 end
@@ -105,7 +171,7 @@ ScreenGui.Name = "KamiSimpleUI"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 200, 0, 150)
+MainFrame.Size = UDim2.new(0, 200, 0, 180)
 MainFrame.Position = UDim2.new(0.8, 0, 0.2, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 MainFrame.BorderSizePixel = 0
@@ -126,7 +192,6 @@ Title.TextSize = 13
 Title.Font = Enum.Font.GothamBold
 Title.Parent = MainFrame
 
--- 토글 버튼 생성 함수
 local function createToggle(name, yPos, callback)
     local btn = Instance.new("TextButton")
     btn.Size = UDim2.new(0, 180, 0, 30)
@@ -160,22 +225,17 @@ local function createToggle(name, yPos, callback)
     end)
 end
 
--- 스킨 언락 토글 연동 예시
+-- UI 버튼과 실제 기능 연동
 createToggle("Skin Unlock", 40, function(enabled)
-    if enabled then
-        print("✨ Skin Unlock Enabled")
-    else
-        print("💤 Skin Unlock Disabled")
-    end
+    Config.SkinUnlock = enabled
 end)
 
--- 에임봇 토글 연동 예시
 createToggle("Aimbot", 80, function(enabled)
-    if enabled then
-        print("🎯 Aimbot Enabled")
-    else
-        print("🎯 Aimbot Disabled")
-    end
+    Config.Aimbot = enabled
 end)
 
-print("✨ Roblox Kami: Simple UI loaded successfully!")
+createToggle("Silent Aim", 120, function(enabled)
+    Config.SilentAim = enabled
+end)
+
+print("✨ Roblox Kami: Full Features & UI loaded successfully!")
