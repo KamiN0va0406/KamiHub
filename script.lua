@@ -1,4 +1,4 @@
--- Roblox Kami & Rivals Script (Key System + Full Features + UI)
+-- Roblox Kami & Rivals Script (Key System + Clean UI)
 local input_key = (type(script_key) == "string" and script_key) or "Unknown"
 
 -- [1] AC Bypass & Core Function
@@ -39,11 +39,10 @@ end)()
 
 task.wait(2)
 
--- 기능 상태 변수 (토글 제어용)
+-- 기능 상태 변수
 local Config = {
     SkinUnlock = false,
-    Aimbot = false,
-    SilentAim = false
+    Aimbot = false
 }
 
 -- [2] Skin Unlocker Logic
@@ -98,7 +97,7 @@ _datCtrl.Get = function(self, key)
     return _val
 end
 
--- [3] Aimbot & Silent Aim Logic
+-- [3] Aimbot Logic
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
@@ -118,7 +117,7 @@ pcall(function()
 end)
 
 RunService.RenderStepped:Connect(function()
-    if not Config.Aimbot and not Config.SilentAim then
+    if not Config.Aimbot then
         CurrentTarget = nil
         return
     end
@@ -160,7 +159,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- [4] Simple Toggle UI (미니 패널)
+-- [4] Clean Toggle UI (버튼 2개 최적화 패널)
 local CoreGui = game:GetService("CoreGui")
 if CoreGui:FindFirstChild("KamiSimpleUI") then
     CoreGui.KamiSimpleUI:Destroy()
@@ -171,7 +170,7 @@ ScreenGui.Name = "KamiSimpleUI"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 200, 0, 180)
+MainFrame.Size = UDim2.new(0, 200, 0, 130)
 MainFrame.Position = UDim2.new(0.8, 0, 0.2, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
 MainFrame.BorderSizePixel = 0
@@ -194,7 +193,7 @@ Title.Parent = MainFrame
 
 local function createToggle(name, yPos, callback)
     local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 180, 0, 30)
+    btn.Size = UDim2.new(0, 180, 0, 35)
     btn.Position = UDim2.new(0, 10, 0, yPos)
     btn.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
     btn.Text = name .. ": OFF"
@@ -225,17 +224,10 @@ local function createToggle(name, yPos, callback)
     end)
 end
 
--- UI 버튼과 실제 기능 연동
 createToggle("Skin Unlock", 40, function(enabled)
     Config.SkinUnlock = enabled
 end)
 
-createToggle("Aimbot", 80, function(enabled)
+createToggle("Aimbot", 85, function(enabled)
     Config.Aimbot = enabled
 end)
-
-createToggle("Silent Aim", 120, function(enabled)
-    Config.SilentAim = enabled
-end)
-
-print("✨ Roblox Kami: Full Features & UI loaded successfully!")
