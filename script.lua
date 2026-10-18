@@ -7,8 +7,8 @@ local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
--- API 주소 설정 (필요시 수정 가능)
-local API_URL = "https://api.pagamescripts.xyz/checkkey"
+-- API 주소 설정 (Render 서버 주소로 변경 완료)
+local API_URL = "https://l-gamblebot.onrender.com/checkkey"
 
 -- 아스널 전용 PlaceId 및 깃허브 Raw 스크립트 주소
 local ARSENAL_PLACE_ID = 286090429
